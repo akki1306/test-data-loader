@@ -26,11 +26,13 @@ package de.triology.testdata.builder
 
 class EntityBuilder {
 
-    private Map<String, ?> entitiesByName = [:]
+    //initialized from constructor
+    private Map<String, ?> entitiesByName
     private EntitiesScriptExecutor executor
 
-    protected EntityBuilder(final EntitiesScriptExecutor executor) {
+    protected EntityBuilder(final EntitiesScriptExecutor executor, Map<String, ?> entitiesByName) {
         this.executor = executor
+        this.entitiesByName = entitiesByName
     }
 
     /**

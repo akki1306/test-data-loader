@@ -41,6 +41,8 @@ class EntitiesScriptExecutorTest extends Specification {
 
     EntitiesScriptExecutor executor = new EntitiesScriptExecutor();
 
+    Map<String, ?> entitiesByName = [:]
+
     def "should fire event for each registered listener" () {
         given: "multiple listeners, which have to be notified when the builder's method fireEntityCreated is called"
         String builtObject = "obj"
@@ -79,7 +81,7 @@ class EntitiesScriptExecutorTest extends Specification {
         executor.addEntityBuilderListener(listener)
 
         when: "the script is processed"
-        executor.execute(new StringReader(entityDefinition))
+        executor.execute(new StringReader(entityDefinition),entitiesByName)
 
         then: "the registered listener get notified for each created object"
         1 * listener.onEntityCreated("simple", {

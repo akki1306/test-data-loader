@@ -119,6 +119,7 @@ class TestDataLoader implements EntityBuilderListener {
      */
     void loadTestData(Collection<String> entityDefinitionFiles) {
         EntityPersister persister = new EntityPersister(entityManager)
+        Map<String, ?> entitiesByName = [:]
         EntitiesScriptExecutor scriptExecutor = new EntitiesScriptExecutor()
                 .addEntityBuilderListener(this)
                 .addEntityBuilderListener(persister)
@@ -126,7 +127,7 @@ class TestDataLoader implements EntityBuilderListener {
 
         withTransaction {
             entityDefinitionFiles.each {
-                scriptExecutor.execute(FileReader.create(it))
+                scriptExecutor.execute(FileReader.create(it), entitiesByName)
             }
         }
     }
