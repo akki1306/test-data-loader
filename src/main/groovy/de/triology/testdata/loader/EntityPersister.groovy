@@ -42,6 +42,10 @@ class EntityPersister implements EntityBuilderListener {
 
     @Override
     public void onEntityCreated(String name, Object entity) {
-        entityManager.persist(entity)
+        try {
+            entityManager.persist(entity)
+        }catch(Exception e){
+            entityManager.merge(entity)
+        }
     }
 }

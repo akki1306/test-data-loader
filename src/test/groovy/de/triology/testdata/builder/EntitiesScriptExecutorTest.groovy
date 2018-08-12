@@ -23,8 +23,6 @@
  */
 package de.triology.testdata.builder
 
-import de.triology.testdata.builder.EntitiesScriptExecutor
-import de.triology.testdata.builder.EntityBuilderListener
 import spock.lang.Specification
 
 class EntitiesScriptExecutorTest extends Specification {
@@ -41,7 +39,8 @@ class EntitiesScriptExecutorTest extends Specification {
 
     EntitiesScriptExecutor executor = new EntitiesScriptExecutor();
 
-    Map<String, ?> entitiesByName = [:]
+    Map<String, ?> masterEntitiesByName = [:]
+    Map<String, ?> transactionEntitiesByName = [:]
 
     def "should fire event for each registered listener" () {
         given: "multiple listeners, which have to be notified when the builder's method fireEntityCreated is called"
@@ -81,7 +80,7 @@ class EntitiesScriptExecutorTest extends Specification {
         executor.addEntityBuilderListener(listener)
 
         when: "the script is processed"
-        executor.execute(new StringReader(entityDefinition),entitiesByName)
+        executor.execute(new StringReader(entityDefinition),masterEntitiesByName, transactionEntitiesByName,EntityType.MASTER)
 
         then: "the registered listener get notified for each created object"
         1 * listener.onEntityCreated("simple", {

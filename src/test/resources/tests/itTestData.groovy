@@ -51,3 +51,4 @@ create User, 'James', {
     login = 'CaptainHook'
     email = 'james.hook@example.com'
 }
+

@@ -37,12 +37,12 @@ class EntitiesScriptExecutor {
      *
      * @param reader - a Reader for the file containing the entity definitions.
      */
-    public void execute(Reader reader, Map<String, ?> entitiesByName) {
+    public void execute(Reader reader, Map<String, ?> masterEntitiesByName,Map<String, ?> transactionEntitiesByName, EntityType entityType) {
         CompilerConfiguration compilerConfiguration = new CompilerConfiguration()
         compilerConfiguration.scriptBaseClass = EntityBuilderScript.class.name
 
         Binding binding = new Binding()
-        binding.builder = new EntityBuilder(this, entitiesByName)
+        binding.builder = new EntityBuilder(this, masterEntitiesByName,transactionEntitiesByName, entityType)
 
         GroovyShell shell = new GroovyShell(this.class.classLoader, binding, compilerConfiguration)
         Script script =  shell.parse(reader)

@@ -23,6 +23,7 @@
  */
 package de.triology.testdata.loader
 
+import de.triology.testdata.builder.EntityType
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -51,8 +52,13 @@ class TestDataLoader implements EntityBuilderListener {
         throw new NoSuchElementException("an entity named '$it' has not been created")
     }
 
+    Map<String, ?> transactionEntitiesByName
+    Map<String, ?> masterEntitiesByName
+
+    private EntityDeleter masterEntityDeleter
+    private EntityDeleter transactionEntityDeleter
+
     private EntityManager entityManager
-    private EntityDeleter entityDeleter
     private TransactionType transactionType
 
     /**
@@ -68,6 +74,8 @@ class TestDataLoader implements EntityBuilderListener {
      */
     TestDataLoader(EntityManager entityManager) {
         this(entityManager, TransactionType.RESOURCE_LOCAL)
+        transactionEntitiesByName = [:]
+        masterEntitiesByName = [:]
     }
 
     /**
@@ -89,8 +97,11 @@ class TestDataLoader implements EntityBuilderListener {
         }
         checkTransactionType(entityManager, transactionType)
         this.entityManager = entityManager
-        entityDeleter = new EntityDeleter(entityManager)
+        masterEntityDeleter = new EntityDeleter(entityManager)
+        transactionEntityDeleter = new EntityDeleter(entityManager)
         this.transactionType = transactionType
+        transactionEntitiesByName = [:]
+        masterEntitiesByName = [:]
     }
 
     private void checkTransactionType(EntityManager entityManager, TransactionType transactionType) {
@@ -111,23 +122,17 @@ class TestDataLoader implements EntityBuilderListener {
         }
     }
 
-    /**
-     * Loads the entities defined in the passed {@code entityDefinitionFiles} into the database.
-     *
-     * @param entityDefinitionFiles {@link Collection} of Strings - the names of files containing the entity
-     * definitions. The files are expected to be UTF-8 encoded.
-     */
-    void loadTestData(Collection<String> entityDefinitionFiles) {
+
+    void loadTestData(Collection<String> entityDefinitionFiles, EntityType entityType){
         EntityPersister persister = new EntityPersister(entityManager)
-        Map<String, ?> entitiesByName = [:]
         EntitiesScriptExecutor scriptExecutor = new EntitiesScriptExecutor()
-                .addEntityBuilderListener(this)
-                .addEntityBuilderListener(persister)
-                .addEntityBuilderListener(entityDeleter)
+            .addEntityBuilderListener(this)
+            .addEntityBuilderListener(persister)
+            .addEntityBuilderListener(entityType.equals(EntityType.MASTER)?masterEntityDeleter:transactionEntityDeleter)
 
         withTransaction {
             entityDefinitionFiles.each {
-                scriptExecutor.execute(FileReader.create(it), entitiesByName)
+                scriptExecutor.execute(FileReader.create(it), masterEntitiesByName,transactionEntitiesByName, entityType)
             }
         }
     }
@@ -159,17 +164,47 @@ class TestDataLoader implements EntityBuilderListener {
      * Clears all previously built entities so that they are no longer available through the {@code getEntityByName}
      * method and deletes all data from the database.
      */
-    void clearEntityCacheAndDatabase() {
-        withTransaction { entityDeleter.deleteAllEntities() }
-        clearEntityCache()
+    void clearTransactionEntityCacheAndDatabase() {
+        withTransaction { transactionEntityDeleter.deleteAllEntities() }
+        clearTransactionEntityCache()
+    }
+
+    /**
+     * Clears all previously built entities so that they are no longer available through the {@code getEntityByName}
+     * method and deletes all data from the database.
+     */
+    void clearMasterEntityCacheAndDatabase() {
+        withTransaction { masterEntityDeleter.deleteAllEntities() }
+        clearMasterEntityCache()
     }
 
     /**
      * Clears all previously built entities so that they are no longer available through the {@code getEntityByName}
      * method.
      */
-    void clearEntityCache() {
-        loadedEntities.clear()
+    void clearTransactionEntityCache() {
+        if(transactionEntitiesByName!=null) {
+            for (Object entityName : transactionEntitiesByName.keySet()) {
+                loadedEntities.remove(entityName)
+            }
+            transactionEntitiesByName.clear()
+        }
+        //   loadedEntities.clear()
+    }
+
+
+    /**
+     * Clears all previously built entities so that they are no longer available through the {@code getEntityByName}
+     * method.
+     */
+    void clearMasterEntityCache() {
+        if(masterEntitiesByName!=null) {
+            for (Object entityName : masterEntitiesByName.keySet()) {
+                loadedEntities.remove(entityName)
+            }
+            masterEntitiesByName.clear()
+        }
+        //   loadedEntities.clear()
     }
 
     private void withTransaction(Closure doWithinTransaction) {
@@ -202,7 +237,19 @@ class TestDataLoader implements EntityBuilderListener {
         loadedEntities[name]=entity
     }
 
-    public void clear() {
-        loadedEntities.clear()
+    public void clearTransactionEntities() {
+        for(Object entityName: transactionEntitiesByName.keySet()){
+            loadedEntities.remove(entityName)
+        }
+        transactionEntitiesByName.clear()
+//        loadedEntities.clear()
+    }
+
+    public void clearMasterEntities() {
+        for(Object entityName: masterEntitiesByName.keySet()){
+            loadedEntities.remove(entityName)
+        }
+        masterEntitiesByName.clear()
+//        loadedEntities.clear()
     }
 }

@@ -23,6 +23,7 @@
  */
 package de.triology.testdata.loader;
 
+import de.triology.testdata.builder.EntityType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,12 +50,12 @@ public class TestDataLoaderIT {
         EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("testdataloader");
         entityManager = entityManagerFactory.createEntityManager();
         testDataLoader = new TestDataLoader(entityManager);
-        testDataLoader.loadTestData(Collections.singletonList("tests/itTestData.groovy"));
+        testDataLoader.loadTestData(Collections.singletonList("tests/itTestData.groovy"),EntityType.MASTER);
     }
 
     @After
     public void tearDown() throws Exception {
-        testDataLoader.clearEntityCacheAndDatabase();
+        testDataLoader.clearMasterEntityCacheAndDatabase();
         assertEquals(0L, entityManager.createQuery("select count(u) from User u").getSingleResult());
         assertEquals(0L, entityManager.createQuery("select count(d) from Department d").getSingleResult());
     }

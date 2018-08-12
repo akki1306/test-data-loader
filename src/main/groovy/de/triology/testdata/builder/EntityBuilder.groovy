@@ -27,12 +27,17 @@ package de.triology.testdata.builder
 class EntityBuilder {
 
     //initialized from constructor
-    private Map<String, ?> entitiesByName
+    private Map<String, ?> masterEntities
+    private Map<String, ?> transactionEntities
     private EntitiesScriptExecutor executor
+    private EntityType entityType;
 
-    protected EntityBuilder(final EntitiesScriptExecutor executor, Map<String, ?> entitiesByName) {
+    protected EntityBuilder(final EntitiesScriptExecutor executor, Map<String, ?> masterEntities,
+                            Map<String, ?> transactionEntities, EntityType entityType) {
         this.executor = executor
-        this.entitiesByName = entitiesByName
+        this.masterEntities = masterEntities
+        this.transactionEntities = transactionEntities
+        this.entityType = entityType;
     }
 
     /**
@@ -45,7 +50,7 @@ class EntityBuilder {
      * @return the created entity
      */
     public <T> T create(@DelegatesTo.Target Class<T> entityClass, String entityName,
-            @DelegatesTo(strategy = Closure.DELEGATE_FIRST, genericTypeIndex = 0) Closure entityData = {}) {
+                        @DelegatesTo(strategy = Closure.DELEGATE_FIRST, genericTypeIndex = 0) Closure entityData = {}) {
 
         T entity = createEntityInstance(entityName, entityClass)
 
@@ -58,14 +63,18 @@ class EntityBuilder {
     }
 
     private <T> T createEntityInstance(final String entityName, final Class<T> entityClass) {
-        if (entitiesByName[entityName]) {
+        if ((masterEntities!=null && masterEntities[entityName]) || (transactionEntities!=null && transactionEntities[entityName]!=null)) {
             throw new EntityBuilderException(
             "attempt to create an instance of $entityClass under the name of '$entityName' but an " +
-            "entity with that name already exists: ${entitiesByName[entityName]}")
+            "entity with that name already exists: ${masterEntities[entityName]}")
         }
 
         final T entity = entityClass.newInstance()
-        entitiesByName[entityName] = entity
+        if(entityType.equals(EntityType.MASTER)) {
+            masterEntities[entityName] = entity
+        }else if(entityType.equals(EntityType.TRANSACTION)){
+            transactionEntities[entityName] = entity
+        }
         return entity
     }
 
@@ -77,8 +86,10 @@ class EntityBuilder {
      * @return a previously created entity
      */
     private def propertyMissing(final String name) {
-        if (entitiesByName[name]) {
-            return entitiesByName[name]
+        if (masterEntities!=null && masterEntities[name]) {
+            return masterEntities[name]
+        }else if(transactionEntities!=null && transactionEntities[name]){
+            return transactionEntities[name]
         }
         throw new EntityBuilderException("requested reference for entity with name '$name' cannot be resolved")
     }

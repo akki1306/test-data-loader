@@ -61,7 +61,7 @@ create TestEntityWithToOneRelationship, 'entityReferencingPreviouslyCreatedEntit
 
 create TestEntityWithToManyRelationship, 'entityWithCollection', {
     toManyRelationship = [
-            create(BasicTestEntity, 'createdInPlace', {
+        create(BasicTestEntity, 'createdInPlace', {
                 integerProperty = 5
             }),
             basicEntity

@@ -23,6 +23,7 @@
  */
 package de.triology.testdata.loader;
 
+import de.triology.testdata.builder.EntityType;
 import de.triology.testdata.loader.TestDataLoader;
 import de.triology.testdata.loader.testentities.AnotherTestEntity;
 import de.triology.testdata.loader.testentities.BasicTestEntity;
@@ -63,28 +64,28 @@ public class TestDataLoaderTest {
 
     @Test
     public void getsCreatedEntityByName() throws Exception {
-        BasicTestEntity entity = loadDefaultTestDataAndCallGetEntityByName("basicEntity", BasicTestEntity.class);
+        BasicTestEntity entity = loadDefaultTestDataAndCallGetEntityByName("basicEntity", BasicTestEntity.class, EntityType.MASTER);
         assertNotNull(entity);
     }
 
     @Test(expected = NoSuchElementException.class)
     public void getEntityByNameFailsForNonexistingEntity() throws Exception {
-        loadDefaultTestDataAndCallGetEntityByName("notExisting", BasicTestEntity.class);
+        loadDefaultTestDataAndCallGetEntityByName("notExisting", BasicTestEntity.class, EntityType.MASTER);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void getEntityByNameFailsIfPassesClassDoesNotMatch() throws Exception {
-        loadDefaultTestDataAndCallGetEntityByName("basicEntity", AnotherTestEntity.class);
+        loadDefaultTestDataAndCallGetEntityByName("basicEntity", AnotherTestEntity.class, EntityType.MASTER);
     }
 
-    private <T> T loadDefaultTestDataAndCallGetEntityByName(String entityName, Class<T> entityClass) {
-        testDataLoader.loadTestData(Collections.singletonList("tests/testEntityDefinitions.groovy"));
+    private <T> T loadDefaultTestDataAndCallGetEntityByName(String entityName, Class<T> entityClass, EntityType entityType) {
+        testDataLoader.loadTestData(Collections.singletonList("tests/testEntityDefinitions.groovy"), entityType);
         return testDataLoader.getEntityByName(entityName, entityClass);
     }
 
     @Test(expected = NoSuchElementException.class)
     public void clearsEntitiesFromMemory() throws Exception {
-        testDataLoader.loadTestData(Collections.singletonList("tests/testEntityDefinitions.groovy"));
+        testDataLoader.loadTestData(Collections.singletonList("tests/testEntityDefinitions.groovy"), EntityType.MASTER);
         try {
             testDataLoader.getEntityByName("basicEntity", BasicTestEntity.class);
         } catch (NoSuchElementException e) {
@@ -92,15 +93,15 @@ public class TestDataLoaderTest {
             fail("basicEntity already was not available before calling clearEntityCacheAndDatabase");
         }
 
-        testDataLoader.clearEntityCacheAndDatabase();
+        testDataLoader.clearMasterEntityCacheAndDatabase();
         testDataLoader.getEntityByName("basicEntity", BasicTestEntity.class);
     }
 
     @Test
     public void clearsEntitiesFromDatabase() throws Exception {
         when(entityManagerMock.merge(any())).then(returnsFirstArg());
-        testDataLoader.loadTestData(Collections.singletonList("tests/testEntityDefinitions.groovy"));
-        testDataLoader.clearEntityCacheAndDatabase();
+        testDataLoader.loadTestData(Collections.singletonList("tests/testEntityDefinitions.groovy"), EntityType.MASTER);
+        testDataLoader.clearMasterEntityCacheAndDatabase();
         verify(entityManagerMock, times(12)).remove(any());
     }
 
@@ -123,7 +124,7 @@ public class TestDataLoaderTest {
         //noinspection unchecked
         when(entityManagerMock.getTransaction()).thenThrow(IllegalStateException.class);
         testDataLoader = new TestDataLoader(entityManagerMock, TestDataLoader.TransactionType.JTA);
-        testDataLoader.loadTestData(Collections.singletonList("tests/testEntityDefinitions.groovy"));
+        testDataLoader.loadTestData(Collections.singletonList("tests/testEntityDefinitions.groovy"), EntityType.MASTER);
     }
 
     @Test(expected = IllegalArgumentException.class)

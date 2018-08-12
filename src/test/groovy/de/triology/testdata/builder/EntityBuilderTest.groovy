@@ -41,11 +41,12 @@ class EntityBuilderTest extends Specification {
 
     EntitiesScriptExecutor executor
     EntityBuilder builder
-    Map<String, ?> entitiesByName = [:]
+    Map<String, ?> masterEntitiesByName = [:]
+    Map<String, ?> transactionEntitiesByName = [:]
 
     def setup() {
         executor = Mock()
-        builder = new EntityBuilder(executor, entitiesByName)
+        builder = new EntityBuilder(executor, masterEntitiesByName, transactionEntitiesByName, EntityType.MASTER)
     }
 
     def "should create single instance and set single property" () {
